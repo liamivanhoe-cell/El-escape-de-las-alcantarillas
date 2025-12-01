@@ -1,155 +1,406 @@
-import { GoogleGenAI, Type } from "@google/genai";
+
 import { LevelData, Tile, Enemy } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Hardcoded maps for levels 1-22
+// Legend: #=Wall, .=Floor, S=Start, E=End, W=Water, R=Rat, B=Breakable Wall, C=Chest
+// I=Code Clue, D=Locked Door, H=Human (City Enemy), ?=Secret Door, !=Secret Clue
+// G=Giant Rat (Boss 1), F=Fernanfloo (Boss 2), A=Animatronic (Level 21)
+const PREMADE_LEVELS: Record<number, string[]> = {
+  // --- SEWER LEVELS (1-12) ---
+  1: [
+    "########",
+    "S......#",
+    "#.####.#",
+    "#.R....E",
+    "########"
+  ],
+  2: [
+    "#########",
+    "S.......#",
+    "#######B#", 
+    "#.....#.#",
+    "#.###.#.E",
+    "#...R...#",
+    "#########"
+  ],
+  3: [
+    "##########",
+    "S..R.....#",
+    "####.###.#",
+    "#....#...#",
+    "#.####.###",
+    "#......R.E",
+    "##########"
+  ],
+  4: [
+    "###########",
+    "S...W.....#",
+    "###.#####.#",
+    "#...#...#.#",
+    "#.###.###.#",
+    "#.....R...E",
+    "###########"
+  ],
+  5: [
+    "############",
+    "S....#.....#",
+    "####.#.###.#",
+    "#..R...#...#",
+    "#.####.#.###",
+    "#....W.#...#",
+    "####B#####.#",
+    "#....R....xE", 
+    "############"
+  ],
+  6: [
+    "#############",
+    "S.....R....C#", 
+    "#######B#####", 
+    "#.....#.#...#", 
+    "#.###B#B#.#.#", 
+    "#.#.......#.#",
+    "#B#...E...#B#", 
+    "#.#########.#",
+    "#...........#",
+    "#############"
+  ],
+  7: [
+    "#############",
+    "S...W...W...#", 
+    "###.###.###.#",
+    "#.W.#...#...#",
+    "#.###.###.###",
+    "#...W...W...#",
+    "#####.#######",
+    "#...B...R...E", 
+    "#############"
+  ],
+  8: [
+    "###############",
+    "S......R.....I#", 
+    "#######.#######",
+    "#.....#D#.....#", 
+    "#.###.#.#.###.#",
+    "#R..#..E..#..R#", 
+    "###############"
+  ],
+  9: [
+    "##############",
+    "S#...#...#...#",
+    ".#.B.#.#.#.#.#",
+    ".#...#.#...#.#",
+    ".#####.#####.#",
+    ".............#",
+    "####.#######.#",
+    "#....R...W...E",
+    "##############"
+  ],
+  10: [
+    "###############",
+    "S.............#",
+    "#######.#####.#",
+    "#.....#.#...#.#",
+    "#.###.#.#.#.#.#",
+    "#.#...#...#...#",
+    "#.#.#######.###",
+    "#W..R.....#...E",
+    "###############"
+  ],
+  11: [
+    "###############",
+    "S...W...W...W.#", 
+    "#####.###.###.#",
+    "#R....#R....#.#",
+    "#####.#####.#.#",
+    "#...B...B...#.#", 
+    "#.###########.#",
+    "#.............E",
+    "###############"
+  ],
+  12: [
+    "#################",
+    "S...............#",
+    "#...............#",
+    "#...............#",
+    "#.......G.......#",
+    "#...............#",
+    "#...............#",
+    "#...............E",
+    "#################"
+  ],
 
-export const generateLevel = async (levelNumber: number): Promise<LevelData> => {
-  const size = Math.min(7 + Math.floor(levelNumber / 2), 14); // Grid grows slightly larger for 4 players
-  const difficulty = levelNumber <= 4 ? "Easy" : levelNumber <= 8 ? "Medium" : "Hard";
-  
-  const systemInstruction = `
-    You are a game level designer for a multiplayer puzzle game set in a sewer. 
-    The grid represents a maze for up to 4 players.
+  // --- CITY LEVELS (13-22) ---
+  13: [
+    "################",
+    "S..............#",
+    "#.############.#",
+    "#......H.......#", 
+    "#.############.#",
+    "#..............E",
+    "################"
+  ],
+  14: [
+    "################",
+    "S....H.....#...#",
+    "##########.#.#.#",
+    "#..........#.#.#",
+    "#.########.#.#.#",
+    "#.#......#.#.#.#",
+    "#.#.####.#.#.#.#",
+    "#H..#..H.#...#.E",
+    "################"
+  ],
+  15: [
+    "#################",
+    "S.......#.......#",
+    "#######.#.#####.#",
+    "#...H...#.#...#.#",
+    "#.#####.#.#.#.#.#",
+    "#.#.....#...#...#",
+    "#.#.#########.###",
+    "#...H.......H...E",
+    "#################"
+  ],
+  16: [
+    "#################",
+    "S...#.......#...#",
+    "###.#.#####.#.#.#",
+    "#...#.#...#.#.#.#",
+    "#.###.###.#.#.#.#",
+    "#...H...#.#...#.#",
+    "#######.#.#####.#",
+    "#.......#...H...E",
+    "#################"
+  ],
+  17: [
+    "###################",
+    "S...H.......H.....#", 
+    "#####.#####.#####.#",
+    "#.....#...#.......#", 
+    "#.###.#.H.#.#######",
+    "#.#...#...#.......#",
+    "#.#.#########.###.#", 
+    "#...H.........H...E", 
+    "###################"
+  ],
+  18: [
+    "###################",
+    "S.......H.......H.#",
+    "#########.#######.#",
+    "#.......#.#.......#",
+    "#.#######.#######.#",
+    "#...H...#.#...H...#",
+    "#######.#.#######.#",
+    "#.......#.........E",
+    "###################"
+  ],
+  19: [
+    "###################",
+    "S..#..#..#..#..#..#",
+    "##.#.##.##.##.##.##",
+    "#..#..#..#..#..#..#",
+    "#.##.##.##.##.##.##",
+    "#..#..#..#..#..#..#",
+    "##.#.##.##.##.##.##",
+    "#H....H....H.....E#",
+    "###################"
+  ],
+  20: [
+    "#######################",
+    "#S........#..........I#", 
+    "#######.#####.#######.#", 
+    "#.......#...#.........#", 
+    "#.#######.###.#######.#",
+    "#.#.................#.#",
+    "#.#.###############.#.#",
+    "#.#.#.............#D#.#", 
+    "#.#.#############.###.#",
+    "#.................#..E#", 
+    "#######################"
+  ],
+  21: [
+    "#####################",
+    "#S........#.........#", // Pizzeria Layout
+    "#.........#....A....#", // Party Room 1
+    "#####.#########.#####",
+    "#...................#", // Main Hall
+    "#.###.#########.###.#", 
+    "#.#A..#.......#..A#.#", // Party Room 2 & 3
+    "#.#...#.......#...#.#",
+    "#.#.###.......###.#.#",
+    "#.........A.........E", // Stage Area
+    "#####################"
+  ],
+  22: [
+    "#######################",
+    "S.....................#",
+    "#.###################.#",
+    "#.#.................#.#",
+    "#.#........F........#.#",
+    "#.#.................#.#",
+    "#.###################.#",
+    "#.....................E",
+    "#######################"
+  ]
+};
+
+export const generateLevel = async (levelNumber: number, isHardcore: boolean): Promise<LevelData> => {
+  return new Promise((resolve) => {
+    // Determine map source
+    let rawMap = PREMADE_LEVELS[levelNumber];
     
-    Legend:
-    '#' is a Wall (impassable).
-    '.' is Floor (walkable).
-    'S' is Start (Top Left area).
-    'E' is End (Bottom Right area).
-    'W' is Water (Hazard).
-    'R' is a Rat Enemy.
+    // Fallback if level > 22
+    if (!rawMap) {
+        const baseLevel = ((levelNumber - 1) % 22) + 1;
+        rawMap = PREMADE_LEVELS[baseLevel]; 
+    }
+
+    // Hardcore: Map Redesign (Mirroring & Expansion)
+    // We do not double boss levels to avoid breaking boss scripts
+    if (isHardcore && levelNumber !== 12 && levelNumber !== 22 && levelNumber !== 17) {
+        const leftMap = rawMap.map(row => row.replace('E', '.')); // Remove Exit from original
+        const rightMap = rawMap.map(row => {
+            // Remove Start from mirror source
+            let r = row.replace('S', '.').split('').reverse().join('');
+            
+            // HARDCORE REDESIGN: 
+            // Replace some empty floors with Hazards in the mirrored section
+            // 10% Water, 5% Rats
+            return r.split('').map(char => {
+                if (char === '.') {
+                    const roll = Math.random();
+                    if (roll < 0.10) return 'W'; // Add Water hazard
+                    if (roll < 0.15) return 'R'; // Add Rat hazard (if generic level)
+                }
+                return char;
+            }).join('');
+        });
+        
+        // Stitch them together
+        rawMap = leftMap.map((row, i) => row + rightMap[i]);
+    }
+
+    const size = rawMap.length > 0 ? rawMap[0].length : 10;
     
-    Rules:
-    1. There MUST be a clear, wide path (at least 2 tiles wide in some places) from S to E so players don't block each other.
-    2. Start 'S' area must be open (3x3 space of '.') so 4 players can spawn safely.
-    3. Do NOT block the immediate exit of 'S' with Walls or Water.
-    4. Rats 'R' must be placed at least 4 tiles away from 'S' to prevent instant death.
-    5. Create "rooms" or open areas, not just narrow corridors.
+    // 60% Chance to spawn a Chest if one isn't manually placed
+    const spawnRandomChest = Math.random() < 0.60;
     
-    Return ONLY a JSON object.
-  `;
+    // 37% Chance to spawn Secret Room Access
+    const spawnSecretRoom = Math.random() < 0.37;
+    const secretCode = Math.floor(1000 + Math.random() * 9000).toString();
 
-  const prompt = `Generate a ${size}x${size} grid for Level ${levelNumber} (${difficulty} difficulty). Ensure the maze is solvable for 4 players.`;
-
-  try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-      config: {
-        systemInstruction: systemInstruction,
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            grid: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.STRING,
-                description: `A string representing a row of the grid. Use characters: #, ., S, E, W, R. Length must be ${size}.`
-              }
-            }
-          },
-          required: ["grid"]
-        }
-      }
-    });
-
-    const json = JSON.parse(response.text || "{}");
-    const rawGrid: string[] = json.grid || [];
-
-    // Parse raw strings into Tile objects and Enemies
     const tiles: Tile[] = [];
     const enemies: Enemy[] = [];
     let startPos = { x: 0, y: 0 };
     let endPos = { x: size - 1, y: size - 1 };
+    const floorTiles: {x: number, y: number}[] = [];
 
-    rawGrid.forEach((rowStr, y) => {
-      rowStr.split('').forEach((char, x) => {
-        let type = mapCharToType(char);
+    rawMap.forEach((row, y) => {
+      row.split('').forEach((char, x) => {
+        let type: Tile['type'] = 'floor';
         
-        // If char is Rat, it's a floor tile with an enemy on it
-        if (char.toUpperCase() === 'R') {
+        switch (char.toUpperCase()) {
+          case '#': type = 'wall'; break;
+          case 'S': type = 'start'; startPos = { x, y }; break;
+          case 'E': type = 'end'; endPos = { x, y }; break;
+          case 'W': type = 'water'; break;
+          case 'B': type = 'breakable_wall'; break;
+          case 'C': type = 'chest'; break;
+          case 'I': type = 'code_clue'; break;
+          case 'D': type = 'locked_door'; break;
+          case 'R': 
+            type = 'floor'; 
+            enemies.push({ id: `rat-${x}-${y}`, x, y, type: 'rat' });
+            break;
+          case 'H':
             type = 'floor';
-            // Safety check: Don't spawn rat too close to 0,0
-            if (x + y > 4) {
-                enemies.push({ id: `rat-${x}-${y}`, x, y, type: 'rat' });
-            }
+            enemies.push({ id: `human-${x}-${y}`, x, y, type: 'human' });
+            break;
+          case 'G':
+            type = 'floor';
+            enemies.push({ id: `giant_rat`, x, y, type: 'giant_rat' });
+            break;
+          case 'F':
+            type = 'floor';
+            enemies.push({ id: `fernanfloo`, x, y, type: 'fernanfloo' });
+            break;
+          case 'A':
+            type = 'floor';
+            enemies.push({ id: `animatronic-${x}-${y}`, x, y, type: 'animatronic' });
+            break;
+          default: type = 'floor';
         }
 
-        if (type === 'start') startPos = { x, y };
-        if (type === 'end') endPos = { x, y };
+        if (type === 'floor') {
+            floorTiles.push({x, y});
+        }
+
         tiles.push({ x, y, type });
       });
     });
 
-    // Fallback/Safety: Ensure Start and End exist
-    const hasStart = tiles.some(t => t.type === 'start');
-    if (!hasStart) {
-        const t = tiles.find(t => t.x === 0 && t.y === 0);
-        if (t) { t.type = 'start'; startPos = { x: 0, y: 0 }; }
+    // Hardcore: Enemy Duplication (for Boss levels or any level really, double the array if we didn't expand map)
+    // If we expanded map, enemies are already naturally doubled/increased by processing the string.
+    // However, Boss levels (12, 17, 22) weren't expanded. So we force duplicate enemies there to ensure difficulty.
+    if (isHardcore && (levelNumber === 12 || levelNumber === 22 || levelNumber === 17)) {
+        // Duplicate non-boss enemies
+        const extraEnemies: Enemy[] = [];
+        enemies.forEach(e => {
+            if (e.type !== 'giant_rat' && e.type !== 'fernanfloo' && e.type !== 'pepe') {
+                 // Try to place near original
+                 extraEnemies.push({ ...e, id: `${e.id}-dup`, x: Math.max(0, e.x - 1) });
+            }
+        });
+        enemies.push(...extraEnemies);
     }
 
-    const hasEnd = tiles.some(t => t.type === 'end');
-    if (!hasEnd) {
-        const t = tiles.find(t => t.x === size-1 && t.y === size-1);
-        if (t) { t.type = 'end'; endPos = { x: size-1, y: size-1 }; }
+    // Random Chest Injection (Not in level 22 or 12 or 21)
+    if (spawnRandomChest && levelNumber !== 22 && levelNumber !== 12 && levelNumber !== 21) {
+        const hasChest = tiles.some(t => t.type === 'chest');
+        if (!hasChest && floorTiles.length > 5) {
+            const randIndex = Math.floor(Math.random() * floorTiles.length);
+            const spot = floorTiles[randIndex];
+            const dist = Math.abs(spot.x - startPos.x) + Math.abs(spot.y - startPos.y);
+            
+            if (dist > 3) {
+                const tileRef = tiles.find(t => t.x === spot.x && t.y === spot.y);
+                if (tileRef && !['code_clue', 'locked_door', 'start', 'end'].includes(tileRef.type)) {
+                    tileRef.type = 'chest';
+                }
+            }
+        }
+    }
+    
+    // Secret Room Injection
+    if (spawnSecretRoom && levelNumber !== 22 && levelNumber !== 12 && levelNumber !== 20 && levelNumber !== 21) {
+        const availableFloors = tiles.filter(t => t.type === 'floor');
+        if (availableFloors.length > 10) {
+             // 1. Place Door (?)
+             const doorIdx = Math.floor(Math.random() * availableFloors.length);
+             const doorTile = availableFloors[doorIdx];
+             const tileInArray = tiles.find(t => t.x === doorTile.x && t.y === doorTile.y);
+             if (tileInArray) tileInArray.type = 'secret_door';
+             
+             // 2. Place Clue (!)
+             // Re-filter to avoid overwriting door
+             const clueCandidates = tiles.filter(t => t.type === 'floor');
+             if (clueCandidates.length > 0) {
+                 const clueIdx = Math.floor(Math.random() * clueCandidates.length);
+                 const clueTile = clueCandidates[clueIdx];
+                 clueTile.type = 'secret_clue';
+             }
+        }
     }
 
-    return {
+    resolve({
       levelNumber,
-      gridSize: size,
-      difficulty,
+      gridSize: size, 
+      difficulty: isHardcore ? "HARDCORE" : (levelNumber <= 4 ? "Fácil" : levelNumber <= 12 ? "Medio" : "Experto"),
       tiles,
       enemies,
       startPos,
-      endPos
-    };
-
-  } catch (error) {
-    console.error("Gemini Level Gen Error:", error);
-    return createFallbackLevel(levelNumber);
-  }
-};
-
-const mapCharToType = (char: string): Tile['type'] => {
-  switch (char.toUpperCase()) {
-    case '#': return 'wall';
-    case 'S': return 'start';
-    case 'E': return 'end';
-    case 'W': return 'water';
-    case 'R': return 'floor'; // Rats stand on floor
-    default: return 'floor';
-  }
-};
-
-const createFallbackLevel = (level: number): LevelData => {
-  const size = 6 + Math.floor(level/3);
-  const tiles: Tile[] = [];
-  const enemies: Enemy[] = [];
-  
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      let type: Tile['type'] = 'floor';
-      if (x === 0 && y === 0) type = 'start';
-      else if (x === size - 1 && y === size - 1) type = 'end';
-      else if (Math.random() > 0.8) type = 'wall';
-      else if (Math.random() > 0.9) type = 'water';
-      
-      // Random rat placement
-      if (type === 'floor' && Math.random() > 0.92 && (x+y > 4)) {
-          enemies.push({ id: `rat-${x}-${y}`, x, y, type: 'rat' });
-      }
-
-      tiles.push({ x, y, type });
-    }
-  }
-  return {
-    levelNumber: level,
-    gridSize: size,
-    difficulty: 'Offline Mode',
-    tiles,
-    enemies,
-    startPos: { x: 0, y: 0 },
-    endPos: { x: size - 1, y: size - 1 }
-  };
+      endPos,
+      secretCode
+    });
+  });
 };

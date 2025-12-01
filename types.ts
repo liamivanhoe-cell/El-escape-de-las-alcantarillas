@@ -1,3 +1,4 @@
+
 export enum Screen {
   INTRO = 'INTRO',
   MENU = 'MENU',
@@ -9,7 +10,26 @@ export enum Screen {
   GAME_OVER = 'GAME_OVER',
   ENDING = 'ENDING',
   SHOP = 'SHOP',
-  COLLECTION = 'COLLECTION'
+  COLLECTION = 'COLLECTION',
+  CINEMATIC = 'CINEMATIC'
+}
+
+export enum GameMode {
+  COOP = 'COOP',
+  COMPETITIVE = 'COMPETITIVE'
+}
+
+export enum Language {
+  ES_ES = 'es-ES',
+  ES_LATAM = 'es-LATAM',
+  EN = 'en',
+  PT = 'pt'
+}
+
+export enum AmmoType {
+  NORMAL = 'NORMAL',
+  FIRE = 'FIRE',
+  CHEESE = 'CHEESE'
 }
 
 export enum CharacterType {
@@ -48,14 +68,39 @@ export interface Player {
 export interface Tile {
   x: number;
   y: number;
-  type: 'wall' | 'floor' | 'start' | 'end' | 'water' | 'mud';
+  type: 'wall' | 'floor' | 'start' | 'end' | 'water' | 'mud' | 'chest' | 'breakable_wall' | 'code_clue' | 'locked_door' | 'secret_door' | 'secret_clue' | 'boss_block';
 }
 
 export interface Enemy {
   id: string;
   x: number;
   y: number;
-  type: 'rat';
+  type: 'rat' | 'human' | 'pepe' | 'giant_rat' | 'fernanfloo' | 'animatronic';
+  isHugged?: boolean; // For Level 17
+}
+
+export interface Box {
+  id: string;
+  x: number;
+  y: number;
+  requiredAmmo: AmmoType;
+}
+
+export interface Lightning {
+  id: string;
+  x: number;
+  y: number;
+  targetId: number; // Player ID it is seeking
+}
+
+export interface Projectile {
+  id: string;
+  x: number;
+  y: number;
+  dx: number;
+  dy: number;
+  ownerId: number;
+  ammoType: AmmoType;
 }
 
 export interface LevelData {
@@ -66,6 +111,7 @@ export interface LevelData {
   enemies: Enemy[];
   startPos: { x: number, y: number };
   endPos: { x: number, y: number };
+  secretCode?: string; // Code for secret room
 }
 
 export interface Mission {
@@ -78,4 +124,13 @@ export interface Mission {
 export interface Inventory {
     ratPoison: number;
     raratuiCheese: number;
+    knife: number;
+    flute: number;
+    waterBucket: number;
+    hammer: boolean;
+    magicStar: number;
+    starStock: number; // Max 4
+    starRestockTime: number; // Timestamp for restocking
+    ammoFire: boolean;
+    ammoCheese: boolean;
 }

@@ -1,4 +1,5 @@
-import { Character, CharacterType, Mission } from './types';
+
+import { Character, CharacterType, Mission, Language } from './types';
 
 export const CHARACTERS: Character[] = [
   {
@@ -115,3 +116,86 @@ export const INITIAL_MISSIONS: Mission[] = [
   { id: 'm2', description: 'Resuelve un puzle en menos de 1 minuto', completed: false, rewardId: 'b10' },
   { id: 'm3', description: 'Completa 5 niveles', completed: false, rewardId: 'b20' }
 ];
+
+export const TRANSLATIONS = {
+  [Language.ES_ES]: {
+    TITLE: "ESCAPE DE LA ALCANTARILLA",
+    PLAY_COOP: "JUGAR COOPERATIVO",
+    PLAY_COMP: "MODO COMPETITIVO",
+    SHOP: "TIENDA",
+    MISSIONS: "MISIONES",
+    LEVEL: "NIVEL",
+    GOLD: "Oro",
+    BACK: "Volver",
+    CONFIRM: "CONFIRMAR EQUIPO",
+    LOBBY_TITLE: "SALA DE JUGADORES",
+    ADD_PLAYER: "Añadir Jugador",
+    COLLECTION: "COLECCIÓN",
+    GAME_OVER: "¡GAME OVER!",
+    VICTORY: "¡VICTORIA!",
+    RETRY: "REINTENTAR",
+    NEXT_LEVEL: "SIGUIENTE NIVEL",
+    MAP: "MAPA",
+    DUCK_HINT: "¡Usa CTRL para agacharte!"
+  },
+  [Language.ES_LATAM]: {
+    TITLE: "EL GRAN ESCAPE",
+    PLAY_COOP: "JUGAR COOP",
+    PLAY_COMP: "MODO VERSUS",
+    SHOP: "TIENDITA",
+    MISSIONS: "TAREAS",
+    LEVEL: "NIVEL",
+    GOLD: "Plata",
+    BACK: "Regresar",
+    CONFIRM: "LISTO",
+    LOBBY_TITLE: "LOBBY",
+    ADD_PLAYER: "Sumar Jugador",
+    COLLECTION: "ALBUM",
+    GAME_OVER: "¡PERDISTE!",
+    VICTORY: "¡GANASTE!",
+    RETRY: "OTRA VEZ",
+    NEXT_LEVEL: "SIGUIENTE",
+    MAP: "MAPA",
+    DUCK_HINT: "¡Usa CTRL para agacharte!"
+  },
+  [Language.EN]: {
+    TITLE: "SEWER ESCAPE",
+    PLAY_COOP: "PLAY CO-OP",
+    PLAY_COMP: "COMPETITIVE MODE",
+    SHOP: "SHOP",
+    MISSIONS: "MISSIONS",
+    LEVEL: "LEVEL",
+    GOLD: "Gold",
+    BACK: "Back",
+    CONFIRM: "CONFIRM TEAM",
+    LOBBY_TITLE: "PLAYER LOBBY",
+    ADD_PLAYER: "Add Player",
+    COLLECTION: "COLLECTION",
+    GAME_OVER: "GAME OVER!",
+    VICTORY: "VICTORY!",
+    RETRY: "RETRY",
+    NEXT_LEVEL: "NEXT LEVEL",
+    MAP: "MAP",
+    DUCK_HINT: "Use CTRL to Duck!"
+  },
+  [Language.PT]: {
+    TITLE: "FUGA DO ESGOTO",
+    PLAY_COOP: "JOGAR COOPERATIVO",
+    PLAY_COMP: "MODO COMPETITIVO",
+    SHOP: "LOJA",
+    MISSIONS: "MISSÕES",
+    LEVEL: "NÍVEL",
+    GOLD: "Ouro",
+    BACK: "Voltar",
+    CONFIRM: "CONFIRMAR EQUIPE",
+    LOBBY_TITLE: "SALA DE JOGADORES",
+    ADD_PLAYER: "Adicionar Jogador",
+    COLLECTION: "COLEÇÃO",
+    GAME_OVER: "FIM DE JOGO!",
+    VICTORY: "VITÓRIA!",
+    RETRY: "TENTAR DE NOVO",
+    NEXT_LEVEL: "PRÓXIMO NÍVEL",
+    MAP: "MAPA",
+    DUCK_HINT: "Use CTRL para agachar!"
+  }
+};
